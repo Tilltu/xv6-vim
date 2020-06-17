@@ -42,3 +42,8 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+
+// // console.c
+// #define BACKSPACE 0x100
+// #define CRTPORT 0x3d4
+// extern void consputc(int);
