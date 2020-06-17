@@ -14,6 +14,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include "console.h"
 
 static void consputc(int);
 
@@ -161,6 +162,21 @@ cgaputc(int c)
   outb(CRTPORT+1, pos);
   crt[pos] = ' ' | 0x0700;
 }
+
+// *******************************************************
+int clrscr()
+{
+   int i, j;
+    for(i = 0;i < MAX_ROW;i++) 
+      for(j = 0;j < MAX_COL;j++)
+        cgaputc('*');
+    
+    return 1;
+}
+
+
+// *******************************************************
+
 
 void
 consputc(int c)

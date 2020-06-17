@@ -2,8 +2,7 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-// #include "kbd.h"
-
+#include "console.h"
 
 // Last line for command input
 static char textfild[MAX_ROW + 1][MAX_COL];
@@ -142,28 +141,30 @@ main(int argc, char* argv[]) {
     exit();
   }
 
-  initscr();
-  flushscr();
-  
-  // printf("%s", argv[1]);
+  clrscr();
 
-  char c;
-  while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
-    switch (c)
-    {
-    case LEFT:
-    case RIGHT:
-    case UP:
-    case DOWN:
-      movecur(c);
-      break;
+  // initscr();
+  // flushscr();
+  
+  // // printf("%s", argv[1]);
+
+  // char c;
+  // while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
+  //   switch (c)
+  //   {
+  //   case LEFT:
+  //   case RIGHT:
+  //   case UP:
+  //   case DOWN:
+  //     movecur(c);
+  //     break;
     
-    case 'w':
-      save(argv[1]);
-      break;
-    default:
-      break;
-    }
-  }
+  //   case 'w':
+  //     save(argv[1]);
+  //     break;
+  //   default:
+  //     break;
+  //   }
+  // }
   exit();
 }
