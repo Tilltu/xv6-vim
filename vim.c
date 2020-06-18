@@ -18,14 +18,14 @@ main(int argc, char *argv[]) {
 
     clrscr();
     setcursor(0);
-    entercon();
+    setconsbuf(ENTER_VIM);
 
     uchar c;
     while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
-        printf(0, "you hit %d", c);
+//        printf(0, "you hit %d", c);
         switch (c) {
             case KEY_RT:
-                printf(0, "you hit right button");
+//                printf(0, "you hit right button");
                 setcursor(1);
                 break;
 
@@ -33,6 +33,6 @@ main(int argc, char *argv[]) {
                 break;
         }
     }
-
+    setconsbuf(EXIT_VIM);
     exit();
 }

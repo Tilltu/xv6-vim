@@ -24,7 +24,7 @@ static int panicked = 0;
 static struct {
     struct spinlock lock;
     int locking;
-} cons, vimcons;
+} cons;
 
 static void
 printint(int xx, int base, int sign) {
@@ -188,6 +188,8 @@ struct {
 
 #define C(x)  ((x)-'@')  // Control-x
 
+static int buffering = 1;
+
 void
 consoleintr(int (*getc)(void)) {
     int c, doprocdump = 0;
@@ -217,8 +219,12 @@ consoleintr(int (*getc)(void)) {
                 if (c != 0 && input.e - input.r < INPUT_BUF) {
                     c = (c == '\r') ? '\n' : c;
                     input.buf[input.e++ % INPUT_BUF] = c;
-                    consputc(c);
-                    if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
+                    if (buffering) {
+                        consputc(c);
+                    } else {
+                        cgaputc(c);
+                    }
+                    if (!buffering || c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
                         input.w = input.e;
                         wakeup(&input.r);
                     }
@@ -350,13 +356,7 @@ clrscr() {
 }
 
 void
-entercon() {
-    initlock(&vimcons.lock, "vimconsole");
-
-    devsw[VIM_CONSOLE].write = consolewrite;
-    devsw[VIM_CONSOLE].read = consoleread;
-    vimcons.locking = 1;
-
-    ioapicenable(IRQ_KBD, 0);
+setconsbuf(int isbuf) {
+    buffering = isbuf;
 }
 // *******************************************************

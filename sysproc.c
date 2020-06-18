@@ -111,8 +111,9 @@ sys_setcursor(int pos)
 }
 
 int
-sys_entercon(void)
+sys_setconsbuf(int isbuf)
 {
-    entercon();
+    argint(0, &isbuf);
+    setconsbuf(isbuf);
     return 0;
 }

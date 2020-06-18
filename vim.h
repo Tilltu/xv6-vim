@@ -25,3 +25,6 @@
 #define KEY_PGDN        0xE7
 #define KEY_INS         0xE8
 #define KEY_DEL         0xE9
+
+#define ENTER_VIM       0
+#define EXIT_VIM        1

@@ -5,4 +5,4 @@
 int  clrscr();
 int  getcursor();
 int  setcursor(int);
-void entercon();
+void setconsbuf(int);

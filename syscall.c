@@ -106,7 +106,7 @@ extern int sys_uptime(void);
 extern int sys_clrscr(void);
 extern int sys_setcursor(void);
 extern int sys_getcursor(void);
-extern int sys_entercon(void);
+extern int sys_setconsbuf(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -133,7 +133,7 @@ static int (*syscalls[])(void) = {
 [SYS_clrscr]  sys_clrscr,
 [SYS_setcursor]  sys_setcursor,
 [SYS_getcursor]  sys_getcursor,
-[SYS_entercon]  sys_entercon,
+[SYS_setconsbuf]  sys_setconsbuf,
 };
 
 void
