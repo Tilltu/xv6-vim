@@ -23,3 +23,6 @@
 
 // Console related
 #define SYS_clrscr 22
+#define SYS_setcursor 23
+#define SYS_getcursor 24
+#define SYS_entercon 25

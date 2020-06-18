@@ -35,3 +35,4 @@ struct devsw {
 extern struct devsw devsw[];
 
 #define CONSOLE 1
+#define VIM_CONSOLE 2

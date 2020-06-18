@@ -1,5 +1,8 @@
-#define MAX_ROW 25
+#define MAX_ROW 24
 #define MAX_COL 80
 
 
-int clrscr();
+int  clrscr();
+int  getcursor();
+int  setcursor(int);
+void entercon();

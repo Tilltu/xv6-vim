@@ -104,6 +104,9 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_clrscr(void);
+extern int sys_setcursor(void);
+extern int sys_getcursor(void);
+extern int sys_entercon(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -128,6 +131,9 @@ static int (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_clrscr]  sys_clrscr,
+[SYS_setcursor]  sys_setcursor,
+[SYS_getcursor]  sys_getcursor,
+[SYS_entercon]  sys_entercon,
 };
 
 void

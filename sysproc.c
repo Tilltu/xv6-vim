@@ -96,3 +96,23 @@ sys_clrscr(void)
 {
   return clrscr();
 }
+
+int
+sys_getcursor(void)
+{
+    return getcursor();
+}
+
+int
+sys_setcursor(int pos)
+{
+    argint(0, &pos);
+    return setcursor(pos);
+}
+
+int
+sys_entercon(void)
+{
+    entercon();
+    return 0;
+}
