@@ -20,6 +20,7 @@
 static void consputc(int);
 
 static int panicked = 0;
+static int buffering = 1;  // If show buff in console
 
 static struct {
     struct spinlock lock;
@@ -188,8 +189,6 @@ struct {
 
 #define C(x)  ((x)-'@')  // Control-x
 
-static int buffering = 1;
-
 void
 consoleintr(int (*getc)(void)) {
     int c, doprocdump = 0;
@@ -212,7 +211,9 @@ consoleintr(int (*getc)(void)) {
             case '\x7f':  // Backspace
                 if (input.e != input.w) {
                     input.e--;
-                    consputc(BACKSPACE);
+                    if (buffering) {
+                        consputc(BACKSPACE);
+                    }
                 }
                 break;
             default:
@@ -221,8 +222,6 @@ consoleintr(int (*getc)(void)) {
                     input.buf[input.e++ % INPUT_BUF] = c;
                     if (buffering) {
                         consputc(c);
-                    } else {
-                        cgaputc(c);
                     }
                     if (!buffering || c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
                         input.w = input.e;
@@ -305,7 +304,20 @@ consoleinit(void) {
 // *******************************************************
 // Self defined functions
 // *******************************************************
-//static int curpos;
+
+void
+scrputc(int pos, int c)
+{
+    setcursor(pos);
+    cgaputc(c);
+//    crt[pos] = (c & 0xff) | WHITE;
+//
+//    outb(CRTPORT, 14);
+//    outb(CRTPORT + 1, pos >> 8);
+//    outb(CRTPORT, 15);
+//    outb(CRTPORT + 1, pos);
+//    crt[pos] = crt[pos] | WHITE;
+}
 
 int
 getcursor() {
@@ -343,7 +355,7 @@ clrscr() {
 
     int maxtext = MAX_COL * MAX_ROW;
     for (int i = 0; i < 80; i++) {
-        crt[maxtext + i] = ('*' & 0xff) | BLACK_ON_WHITE;
+        crt[maxtext + i] = (' ' & 0xff) | WHITE_ON_GREY;
     }
 //    memset(crt, (ushort)((c & 0xff) | L_GREY), sizeof(crt[0]) * MAX_COL * MAX_ROW);
 

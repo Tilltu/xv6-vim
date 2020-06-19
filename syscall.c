@@ -107,6 +107,7 @@ extern int sys_clrscr(void);
 extern int sys_setcursor(void);
 extern int sys_getcursor(void);
 extern int sys_setconsbuf(void);
+extern int sys_scrputc(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -134,6 +135,7 @@ static int (*syscalls[])(void) = {
 [SYS_setcursor]  sys_setcursor,
 [SYS_getcursor]  sys_getcursor,
 [SYS_setconsbuf]  sys_setconsbuf,
+[SYS_scrputc]  sys_scrputc,
 };
 
 void

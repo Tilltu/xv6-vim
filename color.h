@@ -6,6 +6,7 @@
 #define XV6_VIM_COLOR_H
 
 // Color on black background
+// 0xbf00 b--background f--foreground
 #define BLACK  0x0000
 #define BLUE   0x0100
 #define GREEN  0x0200
@@ -15,7 +16,9 @@
 #define YELLOW 0x0e00
 #define WHITE  0x0f00
 
-// Color on black background
+// Color on white background
 #define BLACK_ON_WHITE 0xf000
+
+#define WHITE_ON_GREY  0x8f00
 
 #endif //XV6_VIM_COLOR_H

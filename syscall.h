@@ -22,7 +22,8 @@
 #define SYS_close  21
 
 // Console related
-#define SYS_clrscr 22
-#define SYS_setcursor 23
-#define SYS_getcursor 24
-#define SYS_setconsbuf 25
+#define SYS_clrscr       22
+#define SYS_setcursor    23
+#define SYS_getcursor    24
+#define SYS_setconsbuf   25
+#define SYS_scrputc      26

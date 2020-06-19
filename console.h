@@ -6,3 +6,5 @@ int  clrscr();
 int  getcursor();
 int  setcursor(int);
 void setconsbuf(int);
+void scrputc(int, int);
+

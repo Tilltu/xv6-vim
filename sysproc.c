@@ -117,3 +117,12 @@ sys_setconsbuf(int isbuf)
     setconsbuf(isbuf);
     return 0;
 }
+
+int
+sys_scrputc(int pos, int c)
+{
+    argint(0, &pos);
+    argint(1, &c);
+    scrputc(pos, c);
+    return 0;
+}

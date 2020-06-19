@@ -13,6 +13,7 @@
 #define SCROLLLOCK      (1<<5)
 
 #define E0ESC           (1<<6)
+#define KEY_ESC         0x1B
 
 // Special keycodes
 #define KEY_HOME        0xE0
@@ -28,3 +29,12 @@
 
 #define ENTER_VIM       0
 #define EXIT_VIM        1
+
+#define CMD_BUF_SZ      20
+
+// Mode
+#define V_READONLY      1
+#define V_INSERT        2
+
+// Command line start
+#define CMD_LINE MAX_ROW * MAX_COL
