@@ -51,9 +51,10 @@ main(int argc, char *argv[]) {
     setcursor(0);
     setconsbuf(ENTER_VIM);
 
-    uchar c;
+    int c;
     while (read(STDIN_FILENO, &c, 1) == 1) {
 //        printf(0, "you hit %d", c);
+//        printf(STDIN_FILENO, "Press %d\n", c);
         switch (c) {
             case KEY_UP:
 //                printf(0, "you hit right button");
@@ -78,7 +79,7 @@ main(int argc, char *argv[]) {
             case KEY_ESC:
                 if (mode == V_INSERT) {
                     mode = V_READONLY;
-                    setcursor(CMD_LINE);
+                    setcursor(getcursor() - 1);
                 }
                 break;
             case ':': {
@@ -86,7 +87,7 @@ main(int argc, char *argv[]) {
                     scrputc(MAX_ROW * MAX_COL, ':');
                     char *cmd = readcmd();
                     if (cmd) {
-                        // TODO pattern check
+                        // TODO pattern match
                         if (cmd[0] == 'q')
                             goto EXIT;
                     }

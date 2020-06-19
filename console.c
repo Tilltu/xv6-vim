@@ -162,7 +162,6 @@ cgaputc(int c) {
 }
 
 
-
 void
 consputc(int c) {
     if (panicked) {
@@ -171,6 +170,10 @@ consputc(int c) {
     }
 
     if (c == BACKSPACE) {
+        if (!buffering) {
+            cgaputc(c);
+            return;
+        }
         uartputc('\b');
         uartputc(' ');
         uartputc('\b');
@@ -201,20 +204,41 @@ consoleintr(int (*getc)(void)) {
                 doprocdump = 1;
                 break;
             case C('U'):  // Kill line.
-                while (input.e != input.w &&
-                       input.buf[(input.e - 1) % INPUT_BUF] != '\n') {
-                    input.e--;
-                    consputc(BACKSPACE);
-                }
-                break;
-            case C('H'):
-            case '\x7f':  // Backspace
-                if (input.e != input.w) {
-                    input.e--;
-                    if (buffering) {
+                if (buffering) {
+                    while (input.e != input.w &&
+                           input.buf[(input.e - 1) % INPUT_BUF] != '\n') {
+                        input.e--;
                         consputc(BACKSPACE);
                     }
                 }
+                break;
+            case C('C'):  // Kill line.
+                if (buffering) {
+                    while (input.e != input.w &&
+                           input.buf[(input.e - 1) % INPUT_BUF] != '\n') {
+                        input.e--;
+                        consputc(BACKSPACE);
+                    }
+                }
+                break;
+            case C('H'):
+            case '\x7f': { // Backspace
+                if (buffering) {
+                    if (input.e != input.w) {
+                        input.e--;
+                        consputc(BACKSPACE);
+                    }
+                } else {
+                    // TODO: Bound check
+                    int pos = getcursor();
+                    crt[pos] = '\0' ;
+                    if (pos - 1 >= 0) {
+                        setcursor(pos - 1);
+                    } else {
+                        setcursor(0);
+                    }
+                }
+            }
                 break;
             default:
                 if (c != 0 && input.e - input.r < INPUT_BUF) {
@@ -232,7 +256,7 @@ consoleintr(int (*getc)(void)) {
         }
     }
     release(&cons.lock);
-    if (doprocdump) {
+    if (buffering && doprocdump) {
         procdump();  // now call procdump() wo. cons.lock held
     }
 }
@@ -306,8 +330,7 @@ consoleinit(void) {
 // *******************************************************
 
 void
-scrputc(int pos, int c)
-{
+scrputc(int pos, int c) {
     setcursor(pos);
     cgaputc(c);
 //    crt[pos] = (c & 0xff) | WHITE;
@@ -335,7 +358,10 @@ int
 setcursor(int pos) {
     // TODO: boundary check
     ushort ch = crt[pos];
-    crt[pos] = ch | WHITE;
+    if (ch == ' ')
+        crt[pos] = ch | WHITE;
+    else
+        crt[pos] = ch;
 
     outb(CRTPORT, 14);
     outb(CRTPORT + 1, pos >> 8);
@@ -347,7 +373,7 @@ setcursor(int pos) {
 int
 clrscr() {
     int pos = 0;
-    int c = ' ';
+    int c = '\0';
 
     for (int i = 0; i < MAX_COL * MAX_ROW; i++) {
         crt[i] = (c & 0xff) | L_GREY;
