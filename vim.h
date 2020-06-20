@@ -41,3 +41,5 @@
 
 // Command line start
 #define CMD_LINE MAX_ROW * MAX_COL
+
+#define NULL 0
