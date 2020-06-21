@@ -1,3 +1,5 @@
+#include "types.h"
+
 #define KBSTATP         0x64    // kbd controller status port(I)
 #define KBS_DIB         0x01    // kbd data in buffer
 #define KBDATAP         0x60    // kbd data port(I)
@@ -26,18 +28,17 @@
 #define KEY_PGDN        0xE7
 #define KEY_INS         0xE8
 #define KEY_DEL         0xE9
-#define KEY_BACKSPACE   ('H') - '@'
-#define BACKSPACE       0x100
 
 // Control if console buffer
 #define ENTER_VIM       0
 #define EXIT_VIM        1
 
-#define CMD_BUF_SZ      20
+#define CMD_BUF_SZ      40
 
 // Mode
 #define V_READONLY      1
 #define V_INSERT        2
+#define V_CMD           3
 
 // Command line start
 #define CMD_LINE MAX_ROW * MAX_COL

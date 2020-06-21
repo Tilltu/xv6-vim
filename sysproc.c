@@ -9,120 +9,121 @@
 #include "console.h"
 
 int
-sys_fork(void)
-{
-  return fork();
+sys_fork(void) {
+    return fork();
 }
 
 int
-sys_exit(void)
-{
-  exit();
-  return 0;  // not reached
+sys_exit(void) {
+    exit();
+    return 0;  // not reached
 }
 
 int
-sys_wait(void)
-{
-  return wait();
+sys_wait(void) {
+    return wait();
 }
 
 int
-sys_kill(void)
-{
-  int pid;
+sys_kill(void) {
+    int pid;
 
-  if(argint(0, &pid) < 0)
-    return -1;
-  return kill(pid);
+    if (argint(0, &pid) < 0)
+        return -1;
+    return kill(pid);
 }
 
 int
-sys_getpid(void)
-{
-  return myproc()->pid;
+sys_getpid(void) {
+    return myproc()->pid;
 }
 
 int
-sys_sbrk(void)
-{
-  int addr;
-  int n;
+sys_sbrk(void) {
+    int addr;
+    int n;
 
-  if(argint(0, &n) < 0)
-    return -1;
-  addr = myproc()->sz;
-  if(growproc(n) < 0)
-    return -1;
-  return addr;
+    if (argint(0, &n) < 0)
+        return -1;
+    addr = myproc()->sz;
+    if (growproc(n) < 0)
+        return -1;
+    return addr;
 }
 
 int
-sys_sleep(void)
-{
-  int n;
-  uint ticks0;
+sys_sleep(void) {
+    int n;
+    uint ticks0;
 
-  if(argint(0, &n) < 0)
-    return -1;
-  acquire(&tickslock);
-  ticks0 = ticks;
-  while(ticks - ticks0 < n){
-    if(myproc()->killed){
-      release(&tickslock);
-      return -1;
+    if (argint(0, &n) < 0)
+        return -1;
+    acquire(&tickslock);
+    ticks0 = ticks;
+    while (ticks - ticks0 < n) {
+        if (myproc()->killed) {
+            release(&tickslock);
+            return -1;
+        }
+        sleep(&ticks, &tickslock);
     }
-    sleep(&ticks, &tickslock);
-  }
-  release(&tickslock);
-  return 0;
+    release(&tickslock);
+    return 0;
 }
 
 // return how many clock tick interrupts have occurred
 // since start.
 int
-sys_uptime(void)
-{
-  uint xticks;
+sys_uptime(void) {
+    uint xticks;
 
-  acquire(&tickslock);
-  xticks = ticks;
-  release(&tickslock);
-  return xticks;
+    acquire(&tickslock);
+    xticks = ticks;
+    release(&tickslock);
+    return xticks;
 }
 
 int
-sys_clrscr(void) 
-{
-  return clrscr();
+sys_clrscr(void) {
+    return clrscr();
 }
 
 int
-sys_getcursor(void)
-{
+sys_getcursor(void) {
     return getcursor();
 }
 
 int
-sys_setcursor(int pos)
-{
+sys_setcursor(int pos) {
     argint(0, &pos);
     return setcursor(pos);
 }
 
 int
-sys_setconsbuf(int isbuf)
-{
+sys_setconsbuf(int isbuf) {
     argint(0, &isbuf);
     setconsbuf(isbuf);
     return 0;
 }
 
 int
-sys_scrputc(int pos, int c)
-{
+sys_scrputc(int pos, int c) {
     argint(0, &pos);
     argint(1, &c);
     scrputc(pos, c);
     return 0;
+}
+
+int
+sys_curmove(int move, int mode) {
+    argint(0, &move);
+    argint(1, &mode);
+    curmove(move, mode);
+    return 0;
+}
+
+int
+sys_getcch(int pos) {
+    argint(0, &pos);
+    return getcch(pos);
 }

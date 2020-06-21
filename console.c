@@ -16,6 +16,7 @@
 #include "x86.h"
 #include "console.h"
 #include "color.h"
+#include "vim.h"
 
 static void consputc(int);
 
@@ -231,12 +232,28 @@ consoleintr(int (*getc)(void)) {
                 } else {
                     // TODO: Bound check
                     int pos = getcursor();
-                    crt[pos] = '\0' ;
-                    if (pos - 1 >= 0) {
-                        setcursor(pos - 1);
+                    int ch;
+                    if (pos >= CMD_LINE) { // in command line
+                        ch = (BACKSPACE & 0xff) | WHITE_ON_GREY;
+                        if (pos > CMD_LINE) {
+                            crt[pos - 1] = ch;
+                            setcursor(pos - 1);
+                        } else {
+                            crt[pos] = ch;
+                            setcursor(CMD_LINE);
+                        }
                     } else {
-                        setcursor(0);
+                        ch = (BACKSPACE & 0xff) | WHITE;
+                        if (pos > 0) {
+                            crt[pos - 1] = ch;
+                            setcursor(pos - 1);
+                        } else {
+                            crt[pos] = ch;
+                            setcursor(0);
+                        }
                     }
+
+
                 }
             }
                 break;
@@ -332,14 +349,39 @@ consoleinit(void) {
 void
 scrputc(int pos, int c) {
     setcursor(pos);
-    cgaputc(c);
-//    crt[pos] = (c & 0xff) | WHITE;
+
+    int ch;
+    if (pos >= CMD_LINE)
+        ch = (c & 0xff) | WHITE_ON_GREY;
+    else
+        ch = (c & 0xff) | WHITE;
+
+    if (c == '\n')
+        pos += 80 - pos % 80;
+    else if (c == BACKSPACE) {
+        if (pos > 0) --pos;
+    } else
+        crt[pos++] = ch;
+//        crt[pos++] = (c & 0xff) | WHITE;  // white on black
 //
-//    outb(CRTPORT, 14);
-//    outb(CRTPORT + 1, pos >> 8);
-//    outb(CRTPORT, 15);
-//    outb(CRTPORT + 1, pos);
-//    crt[pos] = crt[pos] | WHITE;
+//    if (pos < 0 || pos > 25 * 80)
+//        panic("pos under/overflow");
+//
+//    if ((pos / 80) >= 24) {  // Scroll up.
+//        memmove(crt, crt + 80, sizeof(crt[0]) * 23 * 80);
+//        pos -= 80;
+//        memset(crt + pos, 0, sizeof(crt[0]) * (24 * 80 - pos));
+//    }
+
+    outb(CRTPORT, 14);
+    outb(CRTPORT + 1, pos >> 8);
+    outb(CRTPORT, 15);
+    outb(CRTPORT + 1, pos);
+    if (pos >= CMD_LINE) {
+        crt[pos] = ' ' | WHITE_ON_GREY;
+    } else {
+        crt[pos] = ' ' | L_GREY;
+    }
 }
 
 int
@@ -355,33 +397,88 @@ getcursor() {
 }
 
 int
+getcch(int pos) {
+    return crt[pos];
+}
+
+int
 setcursor(int pos) {
     // TODO: boundary check
-    ushort ch = crt[pos];
-    if (ch == ' ')
-        crt[pos] = ch | WHITE;
-    else
-        crt[pos] = ch;
+
 
     outb(CRTPORT, 14);
     outb(CRTPORT + 1, pos >> 8);
     outb(CRTPORT, 15);
     outb(CRTPORT + 1, pos);
+    int ch = crt[pos];
+    if (ch == EMPTY_CHAR)
+        crt[pos] = ch | WHITE;
+    else
+        crt[pos] = ch;
     return 0;
+}
+
+void curmove(int move, int mode) {
+    // Textfield movement
+    int pos = getcursor();
+
+    switch (move) {
+        case KEY_LF: {
+            if (mode == V_CMD) {
+                if (pos > CMD_LINE) {
+                    setcursor(pos - 1);
+                }
+            } else {
+                if (pos > 0) {
+                    setcursor(pos - 1);
+                }
+            }
+        }
+            break;
+        case KEY_RT: {
+            if (mode == V_CMD) {
+                if (pos < MAX_CHAR + CMD_BUF_SZ && (crt[pos + 1] & 0xff) != EMPTY_CHAR) {
+                    setcursor(pos + 1);
+                }
+            } else {
+                if (pos < MAX_CHAR && (crt[pos + 1] & 0xff) != EMPTY_CHAR) {
+                    setcursor(pos + 1);
+                }
+            }
+        }
+            break;
+        case KEY_DN: {
+            if (mode != V_CMD) {
+                int crow = pos / 80;
+                if (crow < MAX_ROW && (crt[pos + MAX_COL] & 0xff) != EMPTY_CHAR)
+                    setcursor(pos + MAX_COL);
+            }
+        }
+            break;
+        case KEY_UP: {
+            if (mode != V_CMD) {
+                int crow = pos / 80;
+                if (crow > 0)
+                    setcursor(pos - MAX_COL && (crt[pos - MAX_COL] & 0xff) != EMPTY_CHAR);
+            }
+        }
+            break;
+        default:
+            break;
+    }
 }
 
 int
 clrscr() {
     int pos = 0;
-    int c = '\0';
+    int c = EMPTY_CHAR;
 
     for (int i = 0; i < MAX_COL * MAX_ROW; i++) {
         crt[i] = (c & 0xff) | L_GREY;
     }
 
-    int maxtext = MAX_COL * MAX_ROW;
     for (int i = 0; i < 80; i++) {
-        crt[maxtext + i] = (' ' & 0xff) | WHITE_ON_GREY;
+        crt[MAX_CHAR + i] = (EMPTY_CHAR & 0xff) | WHITE_ON_GREY;
     }
 //    memset(crt, (ushort)((c & 0xff) | L_GREY), sizeof(crt[0]) * MAX_COL * MAX_ROW);
 

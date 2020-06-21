@@ -27,3 +27,5 @@
 #define SYS_getcursor    24
 #define SYS_setconsbuf   25
 #define SYS_scrputc      26
+#define SYS_curmove      27
+#define SYS_getcch       28
