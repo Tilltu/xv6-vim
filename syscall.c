@@ -110,6 +110,8 @@ extern int sys_setconsbuf(void);
 extern int sys_scrputc(void);
 extern int sys_curmove(void);
 extern int sys_getcch(void);
+extern int sys_pushword(void);
+extern int sys_putchar(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -140,6 +142,8 @@ static int (*syscalls[])(void) = {
 [SYS_scrputc]  sys_scrputc,
 [SYS_curmove]  sys_curmove,
 [SYS_getcch]  sys_getcch,
+[SYS_pushword]  sys_pushword,
+[SYS_putchar]  sys_putchar,
 };
 
 void

@@ -18,12 +18,129 @@ typedef struct word {
 typedef struct text {
     char *path;
     int nbytes;             //number of words
-    struct word *head;
+    struct word *head;      
     int ifexist;            //file exist?
 } text;
 
 
 static int mode = V_READONLY;
+text current_text = {NULL, 0, NULL, 0};
+
+word *
+addnode(word * words,int line, int pos, uchar c) {
+    int current_pos = 0;
+    int realpos = line * MAX_COL + pos;
+    word *head = words;
+
+    if (c == '\n')
+    {
+        int empty_length = MAX_COL - realpos%MAX_COL - 1;
+        word *empty_head = (word*)malloc(sizeof(word));
+        empty_head->blank = 1;
+        empty_head->color = 0x21;
+        empty_head->pre = NULL;
+        empty_head->w = '\0';
+        word *empty_node = empty_head;
+        while(empty_length--){
+            empty_node->next = (word*)malloc(sizeof(word));
+            empty_node->next->pre = empty_node;
+            empty_node = empty_node->next;
+            empty_node->w = '\0';
+            empty_node->color = 0x21;
+            empty_node->blank = 1;
+        }
+
+        if (realpos == 0)
+        {
+            empty_node->next = words;
+            words->pre = empty_node;
+            return empty_head;
+        }
+        for (current_pos = 0 ; current_pos < realpos ; ) {
+            if (words->w == '\n')
+                current_pos = (current_pos + 80) - (current_pos % MAX_COL);//reach the begining of next line
+            else
+                current_pos++;
+            if (words->next != NULL)
+                words = words->next;
+        }
+        if (words->next == NULL)
+        {
+            words->next = empty_head;
+            empty_node->next = NULL;
+            empty_head->pre = words;
+        }
+        else
+        {
+            empty_node->next = words;
+            empty_head->pre = words->pre;
+            words->pre->next = empty_head;
+            words->pre = empty_node;
+        }        
+        
+    }
+    else
+    {
+        word *new_word = (word*)malloc(sizeof(word));
+        new_word->w = c;
+        new_word->color = 0x21;
+        new_word->blank = (c=='\n' ? 1 : 0);
+        
+        if (realpos == 0 ) {
+            new_word->pre = NULL;
+            new_word->next = words;
+            words->pre = new_word;
+            return new_word;
+        }
+        for (current_pos = 0 ; current_pos < realpos ; ) {
+            if (words->w == '\n')
+                current_pos = (current_pos + 80) - (current_pos % MAX_COL);//reach the begining of next line
+            else
+                current_pos++;
+            if (words->next != NULL)
+                words = words->next;
+        }
+        //check if it is the last char
+        if (words->next == NULL)
+        {
+            words->next = new_word;
+            new_word->next = NULL;
+            new_word->pre = words;
+        }
+        else
+        {
+            new_word->next = words;
+            new_word->pre = words->pre;
+            new_word->pre->next = new_word;
+            words->pre = new_word;
+            //go on, check if blank=1 exists
+            if (words->blank == 1)//delete a blank char
+            {
+                //zhijiegan!
+                new_word->next = words->next;
+                words->next->pre = new_word;
+                free(words);
+            }
+            else
+            {
+                words = words->next;
+                while (words != NULL)
+                {
+                    if (words->blank==1)
+                    {
+                        //gan!
+                        words->pre->next = words->next;
+                        words->next->pre = words->pre;
+                        free(words);
+                        break;
+                    }
+                    words = words->next;
+                }
+            }
+        }
+    }
+    return head;
+}
 
 word *
 create_text(int size, uchar *words) {
@@ -36,12 +153,14 @@ create_text(int size, uchar *words) {
         //chushihua    
 
         if (words[i] == '\n') {
-            while (pos && pos % MAX_COL != 0) {
+            int empty_length = MAX_COL - pos%MAX_COL;
+            while (empty_length--) {
                 p->next = (word *) malloc(sizeof(word));
                 p->next->color = 0x21;
                 p->next->w = '\0';
                 p->next->blank = 1;
                 p->next->pre = p;
+                head->pre = p->next;//save current tail
                 p = p->next;
                 pos++;
             }
@@ -52,11 +171,13 @@ create_text(int size, uchar *words) {
             p->next->w = words[i++];
             p->next->blank = 0;
             p->next->pre = p;
+            head->pre = p->next;//save current tail
             p = p->next;
             pos++;
         }
     }
     p = NULL;
+    head->next->pre = head->pre;
     head = head->next;
     return head;
 }
@@ -148,24 +269,18 @@ writefile(char *path, struct word *words) {
 
 
 int
-printword(struct word *words, int n_row)// print file begining from n_row row
+printwords(struct word *words, int n_row)// print file begining from n_row row
 {
     int pos = 0;
     int i, j;
     for (i = 0; i < 24; i++) {
         for (j = 0; j < 80; j++) {
-            // printc(pos++,'s');
             if (words != NULL) {
-                scrputc(pos++, (int) words->w);
+                putchar(pos++, (int) words->w);
                 words = words->next;
-            } else {
-                scrputc(pos++, (int) '\0');
-            }
-
-            // printf(1,"%c",words->w);
-
+            } else
+                putchar(pos++, (int) '\0');
         }
-
     }
     return 0;
 }
@@ -245,17 +360,21 @@ main(int argc, char *argv[]) {
         exit();
     }
 
-//    char * filename = argv[1];
+    int current_line = 0;//note how many lines we scroll
+    char * filename = argv[1];
+    readfile(filename, &current_text);
+    
     // TODO: Restore previous context
     int precursor = getcursor();
 
     clrscr();
+    printwords(current_text.head, current_line);
     setcursor(0);
     setconsbuf(ENTER_VIM);
 
     int c;
     while (read(STDIN_FILENO, &c, 1) == 1) {
-//        printf(STDIN_FILENO, "Press %d\n", c);
+    //    printf(STDIN_FILENO, "Press %d\n", c);
         switch (c) {
             case KEY_UP:
             case KEY_DN:
@@ -278,6 +397,8 @@ main(int argc, char *argv[]) {
                         // TODO pattern match
                         if (cmd[0] == 'q')
                             goto EXIT;
+                        else if (cmd[0] == 'w' && cmd[1] == 'q')
+                            goto SAVEANDEXIT;
                     }
                 } else if (mode == V_INSERT) {
                     int cp = getcursor();
@@ -295,16 +416,31 @@ main(int argc, char *argv[]) {
                 }
                 break;
             }
+
             default: {
                 if (mode == V_INSERT) {
                     int cp = getcursor();
-                    scrputc(cp, c);
+                    int np;
+                    pushword(cp, cp/MAX_COL);
+                    if (c == '\n')
+                        np = cp+MAX_COL - MAX_COL%MAX_COL;
+                    else
+                        np = cp + 1;
+                    setcursor(np);
+                    // scrputc(cp, c);
+                    // putchar(cp+1,cc);
+                    //change words linked list
+                    current_text.head = addnode(current_text.head, current_line, cp, c);
+                    printwords(current_text.head,0);
+                    
                 }
                 break;
             }
         }
     }
 
+    SAVEANDEXIT:
+    writefile(filename, current_text.head);
     EXIT:
 
     setconsbuf(EXIT_VIM);

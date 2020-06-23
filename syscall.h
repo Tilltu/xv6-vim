@@ -29,3 +29,5 @@
 #define SYS_scrputc      26
 #define SYS_curmove      27
 #define SYS_getcch       28
+#define SYS_pushword     29
+#define SYS_putchar         30

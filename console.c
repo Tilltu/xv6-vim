@@ -346,6 +346,19 @@ consoleinit(void) {
 // Self defined functions
 // *******************************************************
 
+int 
+pushword(int pos, int line) {
+    int i = (line+1) * MAX_COL-1;
+    for ( ; i > pos; i--)
+        crt[i]=crt[i-1];
+    return crt[i];
+}
+
+void 
+putchar(int pos, int c) {
+    crt[pos] = (c & 0xff) | WHITE;
+}
+
 void
 scrputc(int pos, int c) {
     setcursor(pos);
@@ -441,7 +454,7 @@ void curmove(int move, int mode) {
                     setcursor(pos + 1);
                 }
             } else {
-                if (pos < MAX_CHAR && (crt[pos + 1] & 0xff) != EMPTY_CHAR) {
+                if (pos < MAX_CHAR && !((crt[pos + 1] & 0xff) == EMPTY_CHAR && (crt[pos] & 0xff) == EMPTY_CHAR))  {
                     setcursor(pos + 1);
                 }
             }

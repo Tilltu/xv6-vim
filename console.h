@@ -9,6 +9,8 @@ int  setcursor(int);
 void setconsbuf(int);
 void scrputc(int, int);
 int  getcch(int);
+int pushword(int,int);
+void putchar(int,int);
 
 void curmove(int, int);
 
