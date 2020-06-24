@@ -44,3 +44,19 @@
 #define CMD_LINE MAX_ROW * MAX_COL
 
 #define NULL 0
+
+//text struct
+typedef struct word {
+    uchar w;
+    uchar color;
+    struct word *pre;
+    struct word *next;
+    int blank;        //check paragraph change
+} word;
+
+typedef struct text {
+    char *path;
+    int nbytes;             //number of words
+    struct word *head;      
+    int ifexist;            //file exist?
+} text;
