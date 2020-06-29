@@ -49,6 +49,9 @@
 typedef struct word {
     uchar w;
     uchar color;
+//    int c;
+    int row;
+    int col;
     struct word *pre;
     struct word *next;
     int blank;        //check paragraph change
@@ -57,6 +60,7 @@ typedef struct word {
 typedef struct text {
     char *path;
     int nbytes;             //number of words
-    struct word *head;      
+    struct word *head;
     int ifexist;            //file exist?
 } text;
+

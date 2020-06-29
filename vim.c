@@ -116,7 +116,7 @@ create_text(int size, uchar *words) {
     p = head = (word *) malloc(sizeof(word));
 
     for (i = 0, pos = 0; i < size;) {
-        //chushihua    
+        //chushihua
 
         if (words[i] == '\n') {
             int empty_length = MAX_COL - pos % MAX_COL;
@@ -273,7 +273,7 @@ cmdfilter(int c) {
         c == '!' || c == '@' ||
         c == '#' || c == '$' ||
         c == '%' || c == '^' ||
-        c == '&')
+        c == '&' || c == ':')
         return 1;
     else
         return 0;
@@ -292,7 +292,7 @@ readcmd() {
         len = (pos - MAX_CHAR) % MAX_COL;
         if (len > CMD_BUF_SZ) {
             printf(STDOUT_FILENO, "len=%d", len);
-            return "CMD_OVERFLOW"; // TODO: Better way to handle
+            return NULL; // TODO: Better way to handle
         }
         if (cmdfilter(c))
             scrputc(pos, c);
@@ -333,7 +333,7 @@ main(int argc, char *argv[]) {
     char *filename = argv[1];
     readfile(filename, &current_text);
 
-    // TODO: Restore previous context
+    // Restore previous context
     savescr();
     int precursor = getcursor();
 

@@ -151,6 +151,7 @@ sys_savescr() {
 
 int
 sys_restorescr() {
+    argptr()
     restorescr();
     return 0;
 }
