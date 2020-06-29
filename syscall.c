@@ -112,6 +112,8 @@ extern int sys_curmove(void);
 extern int sys_getcch(void);
 extern int sys_pushword(void);
 extern int sys_putchar(void);
+extern int sys_savescr(void);
+extern int sys_restorescr(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -144,6 +146,8 @@ static int (*syscalls[])(void) = {
 [SYS_getcch]  sys_getcch,
 [SYS_pushword]  sys_pushword,
 [SYS_putchar]  sys_putchar,
+[SYS_savescr]  sys_savescr,
+[SYS_restorescr]  sys_restorescr,
 };
 
 void

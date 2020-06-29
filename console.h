@@ -14,3 +14,5 @@ void putchar(int,int);
 
 void curmove(int, int);
 
+void savescr();
+void restorescr();

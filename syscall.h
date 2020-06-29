@@ -30,4 +30,6 @@
 #define SYS_curmove      27
 #define SYS_getcch       28
 #define SYS_pushword     29
-#define SYS_putchar         30
+#define SYS_putchar      30
+#define SYS_savescr      31
+#define SYS_restorescr   32

@@ -128,6 +128,7 @@ panic(char *s) {
 #define CRTPORT 0x3d4
 static ushort *crt = (ushort *) P2V(0xb8000);  // CGA memory
 
+
 static void
 cgaputc(int c) {
     int pos;
@@ -345,6 +346,16 @@ consoleinit(void) {
 // *******************************************************
 // Self defined functions
 // *******************************************************
+
+static ushort precrt[MAX_ROW * MAX_COL];  // CGA memory
+
+void savescr() {
+    memmove(precrt, crt, (MAX_ROW * MAX_COL) * sizeof(ushort));
+}
+
+void restorescr() {
+    memmove(crt, precrt, (MAX_ROW * MAX_COL) * sizeof(ushort));
+}
 
 int 
 pushword(int pos, int line) {

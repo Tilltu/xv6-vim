@@ -128,17 +128,29 @@ sys_getcch(int pos) {
     return getcch(pos);
 }
 
-int 
+int
 sys_pushword(int pos, int line) {
     argint(0, &pos);
     argint(1, &line);
     return pushword(pos, line);
 }
 
-int 
+int
 sys_putchar(int pos, int c) {
     argint(0, &pos);
     argint(1, &c);
     putchar(pos, c);
+    return 0;
+}
+
+int
+sys_savescr() {
+    savescr();
+    return 0;
+}
+
+int
+sys_restorescr() {
+    restorescr();
     return 0;
 }
