@@ -193,6 +193,66 @@ struct {
 } input;
 
 #define C(x)  ((x)-'@')  // Control-x
+//uchar text[MAX_FILE_SIZE];
+int current_line;
+struct ctext *ctx;
+static struct line *l;
+int len;
+char ch[80];
+static int isdelete = 0;
+//static int deletecount = 0;
+
+void mirrorctx(void *t, int mode) {
+//    t = (struct ctext *) t;
+//    if (mode == M_OUT) {
+//        memmove(ctx, t, sizeof(*t));
+//    }
+//    else
+//        memmove(t, ctx, sizeof(*t));
+    ctx = (struct ctext *) t;;
+    if (ctx == 0) {
+        panic("ctx is null");
+    }
+    if (ctx->start == 0) {
+        panic("ctx-start is null");
+    }
+    l = ctx->start;
+    while (l && l->lineno < current_line)
+        l = l->next;
+    len = l->len;
+    memmove(ch, l->c, sizeof(char) * 80);
+}
+
+void setline(int line) {
+    current_line = line;
+}
+
+int getline() {
+    return current_line;
+}
+
+void deletech(void *t, int pos) {
+    if (isdelete) {
+        struct ctext *c = (struct ctext *) t;
+        line *ll = c->start;
+        if (ll == 0)
+            panic("ll is null");
+        while (ll && ll->lineno < current_line)
+            ll = ll->next;
+        if (ll->len == 0)
+            panic("ll->len is null");
+//        while (deletecount--) {
+//            for (int i = pos; i < ll->len - 1; i++) {
+//                ll->c[pos] = ll->c[pos];
+//            }
+//            ll->len--;
+//        }
+        memmove(ll->c, ch, sizeof(char) * 80);
+        memset(ch, 0, sizeof(char) * 80);
+        isdelete = 0;
+//        deletecount = 0;
+    }
+}
 
 void
 consoleintr(int (*getc)(void)) {
@@ -233,28 +293,44 @@ consoleintr(int (*getc)(void)) {
                 } else {
                     // TODO: Bound check
                     int pos = getcursor();
-                    int ch;
                     if (pos >= CMD_LINE) { // in command line
-                        ch = (BACKSPACE & 0xff) | WHITE_ON_GREY;
                         if (pos > CMD_LINE) {
-                            crt[pos - 1] = ch;
+                            for (int i = pos; i < CMD_BUF_SZ - 1; i++) {
+                                if (crt[i + 1] == '\n')
+                                    break;
+                                crt[i] = (crt[i + 1] & 0xff) | WHITE_ON_GREY;
+                            }
                             setcursor(pos - 1);
                         } else {
-                            crt[pos] = ch;
+                            crt[pos] = (' ' & 0xff) | WHITE_ON_GREY;
                             setcursor(CMD_LINE);
                         }
                     } else {
-                        ch = (BACKSPACE & 0xff) | WHITE;
+//                        for (int i = pos; i < MAX_FILE_SIZE - 1; i++) {
+//                            text[i] = text[i + 1];
+//                        }
+
+//                        if (ctx->start == 0) {
+//                            panic("ctx is null");
+//                        }
+//                        line *p = ctx->start;
+                        isdelete = 1;
+
                         if (pos > 0) {
-                            crt[pos - 1] = ch;
+                            int i;
+                            for (i = (pos + 1) % 80; i < 79; i++) {
+                                ch[i] = ch[i+1];
+                                crt[i] = (crt[i + 1] & 0xff) | WHITE;
+                            }
+//                            for (i = 0; i < len - 1; i++) {
+//                                crt[pos + i] = (crt[pos + i + 1] & 0xff) | WHITE;
+//                            }
                             setcursor(pos - 1);
                         } else {
-                            crt[pos] = ch;
+                            crt[pos] = (' ' & 0xff) | WHITE;
                             setcursor(0);
                         }
                     }
-
-
                 }
             }
                 break;
@@ -277,6 +353,9 @@ consoleintr(int (*getc)(void)) {
     if (buffering && doprocdump) {
         procdump();  // now call procdump() wo. cons.lock held
     }
+//    if (isdelete)
+//        deletech(ctx, (getcursor() + 1) % 80);
+
 }
 
 int
@@ -357,15 +436,15 @@ void restorescr() {
     memmove(crt, precrt, (MAX_ROW * MAX_COL) * sizeof(ushort));
 }
 
-int 
+int
 pushword(int pos, int line) {
-    int i = (line+1) * MAX_COL-1;
-    for ( ; i > pos; i--)
-        crt[i]=crt[i-1];
+    int i = (line + 1) * MAX_COL - 1;
+    for (; i > pos; i--)
+        crt[i] = crt[i - 1];
     return crt[i];
 }
 
-void 
+void
 putchar(int pos, int c) {
     crt[pos] = (c & 0xff) | WHITE;
 }
@@ -465,7 +544,7 @@ void curmove(int move, int mode) {
                     setcursor(pos + 1);
                 }
             } else {
-                if (pos < MAX_CHAR && !((crt[pos + 1] & 0xff) == EMPTY_CHAR && (crt[pos] & 0xff) == EMPTY_CHAR))  {
+                if (pos < MAX_CHAR && !((crt[pos + 1] & 0xff) == EMPTY_CHAR && (crt[pos] & 0xff) == EMPTY_CHAR)) {
                     setcursor(pos + 1);
                 }
             }
@@ -518,4 +597,6 @@ void
 setconsbuf(int isbuf) {
     buffering = isbuf;
 }
+
+
 // *******************************************************

@@ -33,3 +33,7 @@
 #define SYS_putchar      30
 #define SYS_savescr      31
 #define SYS_restorescr   32
+#define SYS_mirrorctx    33
+#define SYS_setline      34
+#define SYS_getline      35
+#define SYS_deletech     36

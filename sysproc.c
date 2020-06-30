@@ -7,6 +7,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "console.h"
+#include "vim.h"
 
 int
 sys_fork(void) {
@@ -152,5 +153,33 @@ sys_savescr() {
 int
 sys_restorescr() {
     restorescr();
+    return 0;
+}
+
+int
+sys_mirrorctx(struct ctext *t, int mode) {
+    argptr(0, (void *) &t, sizeof(*t));
+    argint(1, &mode);
+    mirrorctx(t, mode);
+    return 0;
+}
+
+int
+sys_getline() {
+    return getline();
+}
+
+int
+sys_setline(int l) {
+    argint(0, &l);
+    setline(l);
+    return 0;
+}
+
+int
+sys_deletech(struct ctext *t, int pos) {
+    argptr(0, (void *) &t, sizeof(*t));
+    argint(1, &pos);
+    deletech(t, pos);
     return 0;
 }

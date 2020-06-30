@@ -103,3 +103,12 @@ strlen(const char *s)
   return n;
 }
 
+int
+ustrlen(const uchar *s)
+{
+    int n;
+
+    for(n = 0; s[n]; n++)
+        ;
+    return n;
+}

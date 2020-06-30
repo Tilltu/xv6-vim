@@ -28,6 +28,7 @@
 #define KEY_PGDN        0xE7
 #define KEY_INS         0xE8
 #define KEY_DEL         0xE9
+#define C(x)  ((x)-'@')  // Control-x
 
 // Control if console buffer
 #define ENTER_VIM       0
@@ -45,18 +46,18 @@
 
 #define NULL 0
 
-//text struct
-typedef struct word {
-    uchar w;
-    uchar color;
-    struct word *pre;
-    struct word *next;
-    int blank;        //check paragraph change
-} word;
 
-typedef struct text {
-    char *path;
-    int nbytes;             //number of words
-    struct word *head;      
-    int ifexist;            //file exist?
-} text;
+//#define MAX_FILE_SIZE   2048 // 2048 characters
+typedef struct line {
+    char c[80];
+//    char color;
+    int len;
+    int lineno;
+    int para; // paragraph number
+    struct line *next;
+} line;
+
+typedef struct ctext {
+    line *start;
+    int lines; // number of lines
+} ctext;
