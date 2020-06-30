@@ -112,7 +112,7 @@ readfile(char *path) {
 //                ctx->lines++;
 //
 //            } else
-                {
+            {
                 if (buf[i] == '\n') {
                     p->len = strlen(p->c);
                     p->lineno = (i / 80) + 1;
@@ -388,8 +388,8 @@ void rmch() {
     }
 //    int i;
     int len = strlen(p->c);
-    printf(2, "Len:%d", len);
-    printf(2, "Col:%d", col);
+//    printf(2, "Len:%d", len);
+//    printf(2, "Col:%d", col);
 //    printf(1, "Before:%d\n", len);
     if (len < MAX_COL) {
 //        for (i = col; i < len - 1; i++) {
@@ -469,7 +469,7 @@ printtext(int line) {
                 scrputc(pos, '\n');
             }
 //            if (p->c[i] != EMPTY_CHAR)
-                scrputc(pos++, (p->c[i]));
+            scrputc(pos++, (p->c[i]));
         }
         p = p->next;
     }
@@ -518,6 +518,38 @@ main(int argc, char *argv[]) {
             case KEY_RT:
                 cursormove(c);
                 break;
+            case 'k': // up
+            {
+                if (mode == V_INSERT) {
+                    cursormove(KEY_UP);
+                } else
+                    goto DEFAULT;
+                break;
+            }
+            case 'j': // down
+            {
+                if (mode == V_READONLY) {
+                    cursormove(KEY_DN);
+                } else
+                    goto DEFAULT;
+                break;
+            }
+            case 'h': // left
+            {
+                if (mode == V_READONLY) {
+                    cursormove(KEY_LF);
+                } else
+                    goto DEFAULT;
+                break;
+            }
+            case 'l': // right
+            {
+                if (mode == V_READONLY) {
+                    cursormove(KEY_RT);
+                } else
+                    goto DEFAULT;
+                break;
+            }
             case KEY_ESC:
                 if (mode == V_INSERT) {
                     mode = V_READONLY;
@@ -576,7 +608,7 @@ main(int argc, char *argv[]) {
                 int para = p->para;
                 int lineno = p->lineno;
                 if (p->len < 80) {
-                    p->c[p->len++] = '\n';
+                    p->c[strlen(p->c)] = '\n';
                 }
 
                 l->lineno = lineno + 1;
