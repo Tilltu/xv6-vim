@@ -550,6 +550,18 @@ main(int argc, char *argv[]) {
                     goto DEFAULT;
                 break;
             }
+            case 'G': {
+                if (mode == V_READONLY) {
+                    setcursor(ctx->lines * MAX_COL);
+                }
+            }
+                break;
+            case 'g': {
+                if (mode == V_READONLY) {
+                    setcursor(0);
+                }
+            }
+                break;
             case KEY_ESC:
                 if (mode == V_INSERT) {
                     mode = V_READONLY;
