@@ -37,3 +37,4 @@
 #define SYS_setline      34
 #define SYS_getline      35
 #define SYS_deletech     36
+#define SYS_getinput     37

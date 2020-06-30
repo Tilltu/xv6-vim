@@ -198,8 +198,8 @@ int current_line;
 struct ctext *ctx;
 static struct line *l;
 int len;
-char ch[80];
-static int isdelete = 0;
+char ch[80] = {EMPTY_CHAR};
+//static int isdelete = 0;
 //static int deletecount = 0;
 
 void mirrorctx(void *t, int mode) {
@@ -209,18 +209,21 @@ void mirrorctx(void *t, int mode) {
 //    }
 //    else
 //        memmove(t, ctx, sizeof(*t));
-    ctx = (struct ctext *) t;;
-    if (ctx == 0) {
-        panic("ctx is null");
-    }
-    if (ctx->start == 0) {
-        panic("ctx-start is null");
-    }
-    l = ctx->start;
-    while (l && l->lineno < current_line)
-        l = l->next;
-    len = l->len;
-    memmove(ch, l->c, sizeof(char) * 80);
+    if (mode == M_IN) {
+        ctx = (struct ctext *) t;;
+        if (ctx == 0) {
+            panic("ctx is null");
+        }
+        if (ctx->start == 0) {
+            panic("ctx-start is null");
+        }
+        l = ctx->start;
+        while (l && l->lineno < current_line)
+            l = l->next;
+        len = strlen(l->c);
+        memmove(ch, l->c, sizeof(char) * 80);
+    } else
+        ctx = NULL;
 }
 
 void setline(int line) {
@@ -231,27 +234,24 @@ int getline() {
     return current_line;
 }
 
-void deletech(void *t, int pos) {
-    if (isdelete) {
-        struct ctext *c = (struct ctext *) t;
-        line *ll = c->start;
-        if (ll == 0)
-            panic("ll is null");
-        while (ll && ll->lineno < current_line)
-            ll = ll->next;
-        if (ll->len == 0)
-            panic("ll->len is null");
-//        while (deletecount--) {
-//            for (int i = pos; i < ll->len - 1; i++) {
-//                ll->c[pos] = ll->c[pos];
-//            }
-//            ll->len--;
-//        }
-        memmove(ll->c, ch, sizeof(char) * 80);
-        memset(ch, 0, sizeof(char) * 80);
-        isdelete = 0;
-//        deletecount = 0;
+/*
+ * delete one character in screen
+ */
+void
+deletech(int currentline, int linecount) {
+    int pos = getcursor();
+    int p = pos % 80 + (currentline - 1) * MAX_COL;
+    for (int i = p;i < (MAX_COL - p) + MAX_COL * linecount - 1;i++) {
+        crt[i] = crt[i + 1];
     }
+    setcursor(pos);
+}
+
+static int in;
+
+int
+getinput() {
+    return in;
 }
 
 void
@@ -295,9 +295,9 @@ consoleintr(int (*getc)(void)) {
                     int pos = getcursor();
                     if (pos >= CMD_LINE) { // in command line
                         if (pos > CMD_LINE) {
-                            for (int i = pos; i < CMD_BUF_SZ - 1; i++) {
-                                if (crt[i + 1] == '\n')
-                                    break;
+                            for (int i = pos; i < pos + CMD_BUF_SZ - 1; i++) {
+//                                if (crt[i + 1] == '\n')
+//                                    break;
                                 crt[i] = (crt[i + 1] & 0xff) | WHITE_ON_GREY;
                             }
                             setcursor(pos - 1);
@@ -306,31 +306,32 @@ consoleintr(int (*getc)(void)) {
                             setcursor(CMD_LINE);
                         }
                     } else {
-//                        for (int i = pos; i < MAX_FILE_SIZE - 1; i++) {
-//                            text[i] = text[i + 1];
-//                        }
+                        curmove(KEY_LF, V_READONLY);
+//                        panic("Enter here!!");
+                    }
+//                    else {
+                    // TODO: BACKSPACE handle
 
-//                        if (ctx->start == 0) {
-//                            panic("ctx is null");
-//                        }
-//                        line *p = ctx->start;
-                        isdelete = 1;
-
-                        if (pos > 0) {
-                            int i;
-                            for (i = (pos + 1) % 80; i < 79; i++) {
-                                ch[i] = ch[i+1];
-                                crt[i] = (crt[i + 1] & 0xff) | WHITE;
-                            }
+//                        in = BACKSPACE;
+//                        isdelete = 1;
+//                        if (pos > 0) {
+//                            int i;
+//
+//                            for (i = (pos) % 80; i < 79; i++) {
+////                                if (ch[i + 1] != EMPTY_CHAR)
+//                                ch[i] = ch[i + 1];
+//
+//                            }
 //                            for (i = 0; i < len - 1; i++) {
 //                                crt[pos + i] = (crt[pos + i + 1] & 0xff) | WHITE;
 //                            }
-                            setcursor(pos - 1);
-                        } else {
-                            crt[pos] = (' ' & 0xff) | WHITE;
-                            setcursor(0);
-                        }
-                    }
+//                            setcursor(pos - 1);
+//                            len--;
+//                        } else {
+//                            crt[pos] = (' ' & 0xff) | WHITE;
+//                            setcursor(0);
+//                        }
+//                    }
                 }
             }
                 break;
@@ -340,6 +341,7 @@ consoleintr(int (*getc)(void)) {
                     input.buf[input.e++ % INPUT_BUF] = c;
                     if (buffering) {
                         consputc(c);
+                        in = c;
                     }
                     if (!buffering || c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
                         input.w = input.e;
@@ -499,6 +501,9 @@ getcursor() {
     return pos;
 }
 
+/*
+ * Get console character
+ */
 int
 getcch(int pos) {
     return crt[pos];

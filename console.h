@@ -23,7 +23,9 @@ void curmove(int, int);
 void savescr();
 void restorescr();
 
-void deletech(void *t, int pos);
+int getinput();
+
+void deletech(int currentline, int linecount);
 void mirrorctx(void* t, int mode);
 void setline(int);
 int  getline();

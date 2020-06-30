@@ -118,6 +118,7 @@ extern int sys_mirrorctx(void);
 extern int sys_setline(void);
 extern int sys_getline(void);
 extern int sys_deletech(void);
+extern int sys_getinput(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -156,6 +157,7 @@ static int (*syscalls[])(void) = {
 [SYS_setline]  sys_setline,
 [SYS_getline]  sys_getline,
 [SYS_deletech]  sys_deletech,
+[SYS_getinput]  sys_getinput,
 };
 
 void

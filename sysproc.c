@@ -177,9 +177,14 @@ sys_setline(int l) {
 }
 
 int
-sys_deletech(struct ctext *t, int pos) {
-    argptr(0, (void *) &t, sizeof(*t));
-    argint(1, &pos);
-    deletech(t, pos);
+sys_deletech(int currentline, int linecount) {
+    argint(0, &currentline);
+    argint(1, &linecount);
+    deletech(currentline, linecount);
     return 0;
+}
+
+int
+sys_getinput() {
+    return getinput();
 }
