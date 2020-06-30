@@ -10,9 +10,11 @@
 uchar text[MAX_FILE_SIZE];
 uchar emptytext[MAX_FILE_SIZE];
 
-static int vimline = 0;
+static int vimline = 1;
 
-void printtext();
+void printtext(int);
+
+int cursormove(int);
 
 void
 upvimline() {
@@ -35,6 +37,7 @@ void initctx() {
     ctx = (struct ctext *) malloc(sizeof(struct ctext));
 }
 
+// File related
 int
 readfile(char *path) {
     int fd;         //file decription
@@ -78,34 +81,60 @@ readfile(char *path) {
             line *l = (line *) malloc(sizeof(struct line));
             l->lineno = 1;
             l->para = 1;
+            memset(l->c, EMPTY_CHAR, sizeof(char) * 80);
             l->len = strlen(l->c);
             l->next = NULL;
             p = l;
             ctx->start = p;
+            ctx->lines = 1;
         }
 //        int test = 80 % 80;
 //        printf(1, "P:%d\n", p);
 //        printf(1, "Test:%d\n", test);
         //
         for (int i = 0; i < f_size; i++) {
-            if ((i + 1) % 80 == 0) {
-                p->len = strlen(p->c);
-                p->lineno = i / 80;
-                // new line
-                line *l = (line *) malloc(sizeof(struct line));
-                l->lineno = p->lineno + 1;
-                l->len = strlen(l->c);
-                l->next = NULL;
-                if (buf[i] != '\n')
-                    l->para = p->para;
-                else
-                    l->para = p->para + 1;
+//            if ((i + 1) % 80 == 0) {
+//                p->len = strlen(p->c);
+//                p->lineno = (i / 80) + 1;
+//                // new line
+//                line *l = (line *) malloc(sizeof(struct line));
+//                l->lineno = p->lineno + 1;
+//                memset(l->c, EMPTY_CHAR, sizeof(char) * 80);
+//                l->len = strlen(l->c);
+//                l->next = NULL;
+//                if (buf[i] != '\n')
+//                    l->para = p->para;
+//                else
+//                    l->para = p->para + 1;
+//
+//                p->next = l;
+//                p = p->next;
+//                ctx->lines++;
+//
+//            } else
+                {
+                if (buf[i] == '\n') {
+                    p->len = strlen(p->c);
+                    p->lineno = (i / 80) + 1;
+                    // new line
+                    line *nl = (line *) malloc(sizeof(struct line));
+                    nl->lineno = p->lineno + 1;
+                    memset(nl->c, EMPTY_CHAR, sizeof(char) * 80);
 
-                p->next = l;
-                p = p->next;
-            } else {
-                p->c[i % 80] = buf[i];
-                p->len++;
+                    nl->len = strlen(nl->c);
+                    if (nl->len < 80) {
+                        nl->c[nl->len++] = '\n';
+                    }
+                    nl->next = NULL;
+                    nl->para = p->para + 1;
+
+                    p->next = nl;
+                    p = p->next;
+                    ctx->lines++;
+                } else {
+                    p->c[p->len++] = buf[i];
+                    p->len = strlen(p->c);
+                }
             }
         }
     } else                        //empty file
@@ -117,9 +146,12 @@ readfile(char *path) {
             l->lineno = 1;
             l->para = 1;
             l->len = 0;
+            memset(l->c, EMPTY_CHAR, sizeof(char) * 80);
+
             l->next = NULL;
             p = l;
             ctx->start = p;
+            ctx->lines = 1;
         }
     }
 
@@ -129,7 +161,6 @@ readfile(char *path) {
 
     return 0;
 }
-
 
 int
 writefile(char *path) {
@@ -171,7 +202,6 @@ writefile(char *path) {
     close(fd);
     return 0;
 }
-
 
 static int mode = V_READONLY;
 
@@ -227,19 +257,125 @@ clearcli() {
     }
 }
 
+static void
+showline() {
+    int precur = getcursor();
+    int i;
+    for (i = MAX_COL * MAX_ROW; i < MAX_COL * MAX_ROW + 60; i++) {
+        scrputc(i, (EMPTY_CHAR & 0xff) | BLACK);
+    }
+    int p = MAX_COL * MAX_ROW + 60;
+    scrputc(p++, (('l') & 0xff) | WHITE);
+    scrputc(p++, (('i') & 0xff) | WHITE);
+    scrputc(p++, (('n') & 0xff) | WHITE);
+    scrputc(p++, (('e') & 0xff) | WHITE);
+    scrputc(p++, ((':') & 0xff) | WHITE);
+    int d1;
+    int d2;
+    if (vimline >= 10) {
+        d1 = vimline / 10;
+        d2 = vimline % 10;
+    } else {
+        d1 = 0;
+        d2 = vimline;
+    }
+    scrputc(p++, ((d1 + '0') & 0xff) | WHITE);
+    scrputc(p++, ((d2 + '0') & 0xff) | WHITE);
+
+    for (i = p; i < MAX_COL * MAX_ROW + 80; i++) {
+        scrputc(i, (EMPTY_CHAR & 0xff) | BLACK);
+    }
+
+    setcursor(precur);
+}
+
+int getchar(int pos) {
+    line *p = ctx->start;
+    while (p->next && p->lineno < vimline)
+        p = p->next;
+    int col = (pos) % 80;
+//    printf(1, "Col:%d", col);
+    if (p == 0) {
+        printf(2, "P is null");
+        return 0;
+    }
+    return p->c[col];
+}
+
 // Cursor move wrapper
 int
 cursormove(int move) {
+    int pos = getcursor();
+
+    switch (move) {
+        case KEY_LF: {
+            if (mode == V_CMD) {
+                if (pos > CMD_LINE) {
+                    setcursor(pos - 1);
+                }
+            } else {
+                if (pos > 0) {
+                    if (getchar(pos - 1) != EMPTY_CHAR)
+                        setcursor(pos - 1);
+                }
+            }
+        }
+            break;
+        case KEY_RT: {
+            if (mode == V_CMD) {
+                if (pos < MAX_CHAR + CMD_BUF_SZ && (getcch(pos + 1)) != EMPTY_CHAR) {
+                    setcursor(pos + 1);
+                }
+            } else {
+                if (pos < MAX_CHAR && (getchar(pos + 1) != EMPTY_CHAR)) {
+                    setcursor(pos + 1);
+                }
+            }
+        }
+            break;
+        case KEY_DN: {
+            if (mode != V_CMD) {
+                int crow = pos / 80 + 1;
+                if (crow <= MAX_ROW && crow < ctx->lines && (getchar(pos + MAX_COL) != EMPTY_CHAR)) {
+                    if (pos + MAX_COL >= MAX_CHAR)
+                        pos = MAX_CHAR - 1;
+                    else
+                        pos = pos + MAX_COL;
+                    setcursor(pos);
+                    upvimline();
+                }
+            }
+        }
+            break;
+        case KEY_UP: {
+            if (mode != V_CMD) {
+                int crow = pos / 80 + 1;
+                if (crow > 0 && (getchar(pos - MAX_COL) != EMPTY_CHAR)) {
+                    if (pos - MAX_COL < 0)
+                        pos = 0;
+                    else
+                        pos = pos - MAX_COL;
+                    setcursor(pos);
+                    downvimline();
+                }
+            }
+        }
+            break;
+        default:
+            break;
+    }
+
     return 0;
 }
 
 // Remove character
 void rmch() {
+//    printf(1, "VIMLINE:%d", vimline);
     int pos = getcursor();
     int col = pos % MAX_COL;
-    int currentline = vimline;
+//    int currentline = vimline;
     line *p = ctx->start;
-    while (p && p->lineno < currentline)
+    while (p->next && p->lineno < vimline)
         p = p->next;
 
     int linecount = 0;
@@ -250,21 +386,26 @@ void rmch() {
             linecount++;
         }
     }
-    int i;
+//    int i;
     int len = strlen(p->c);
+    printf(2, "Len:%d", len);
+    printf(2, "Col:%d", col);
+//    printf(1, "Before:%d\n", len);
     if (len < MAX_COL) {
-        for (i = col; i < len - 1; i++) {
-            p->c[i] = p->c[i + 1];
-        }
-        p->c[i] = EMPTY_CHAR;
-    } else { // hava same paragraph line
+//        for (i = col; i < len - 1; i++) {
+//            p->c[i] = p->c[i + 1];
+//        }
+//        p->c[i] = EMPTY_CHAR;
+        memmove(p->c + col, p->c + col + 1, sizeof(char) * 80 - col);
+    } else { // TODO: hava same paragraph line
 
     }
+//    printf(1, "After:%d\n", strlen(p->c));
 
 
     // Screen delete
 //    deletech(vimline, linecount);
-    printtext();
+    printtext(1);
     setcursor(pos);
 }
 
@@ -290,7 +431,7 @@ readcmd() {
             scrputc(pos, c);
         else {
             if (c == KEY_LF || c == KEY_RT)
-                curmove(c, mode);
+                cursormove(c);
             if (c == KEY_ESC) {
                 mode = V_READONLY;
                 clearcli();
@@ -311,20 +452,23 @@ readcmd() {
 
 
 void
-printtext() {
+printtext(int line) {
 //    int precur = getcursor();
     int pos = 0;
     int i;
 
-    line *p = ctx->start;
+    struct line *p = ctx->start;
+    while (p->next && p->lineno < line) {
+        p = p->next;
+    }
     while (p) {
-        for (i = 0; i < p->len; i++) {
+        for (i = 0; i < strlen(p->c); i++) {
             if (p->c[i] == '\n') {
                 // TODO: Bound check
                 pos = pos + 80 - ((pos + 1) % 80);
                 scrputc(pos, '\n');
             }
-            if (p->c[i] != EMPTY_CHAR)
+//            if (p->c[i] != EMPTY_CHAR)
                 scrputc(pos++, (p->c[i]));
         }
         p = p->next;
@@ -361,23 +505,23 @@ main(int argc, char *argv[]) {
     clrscr();
     setcursor(0);
     setline(1);
-    printtext();
+    printtext(1);
     setconsbuf(ENTER_VIM);
 
     int c;
     while (read(STDIN_FILENO, &c, sizeof(uchar)) == 1) {
-
+        showline();
         switch (c) {
             case KEY_UP:
             case KEY_DN:
             case KEY_LF:
             case KEY_RT:
-                curmove(c, mode);
+                cursormove(c);
                 break;
             case KEY_ESC:
                 if (mode == V_INSERT) {
                     mode = V_READONLY;
-                    curmove(KEY_LF, mode);
+                    cursormove(KEY_LF);
                 } else if (mode == V_CMD) {
                     mode = V_READONLY;
                 }
@@ -437,11 +581,15 @@ main(int argc, char *argv[]) {
 
                 l->lineno = lineno + 1;
                 l->para = para + 1;
+                memset(l->c, EMPTY_CHAR, sizeof(char) * 80);
+
                 l->len = strlen(l->c);
                 l->next = NULL;
                 p->next = l;
+                ctx->lines++;
 
                 scrputc(getcursor(), '\n');
+
             }
                 break;
 
@@ -466,15 +614,20 @@ main(int argc, char *argv[]) {
                         l->lineno = 1;
                         l->para = 1;
                         l->len = 0;
+                        memset(l->c, EMPTY_CHAR, sizeof(char) * 80);
+
                         l->next = NULL;
                         p = l;
                         ctx->start = p;
+                        ctx->lines = 1;
                     } else {
-                        while (p && p->lineno < vimline) {
+//                        printf(1, "LINE:%d", vimline);
+                        while (p->next && p->lineno < vimline) {
                             p = p->next;
                         }
+
                         int col = (cp) % 80;
-                        if (col == 0 && cp != 0) { // new line
+                        if (col == 0 && cp != 0 && p->len == 80) { // new line
                             upvimline();
                             setline(vimline);
                             line *nl = (line *) malloc(sizeof(struct line));
@@ -486,13 +639,18 @@ main(int argc, char *argv[]) {
 
                             nl->lineno = nlineno + 1;
                             nl->para = npara;
+                            memset(nl->c, EMPTY_CHAR, sizeof(char) * 80);
+
                             nl->c[col] = c;
                             nl->len = strlen(nl->c);
                             nl->next = NULL;
                             np->next = nl;
+
+                            ctx->lines++;
                         } else {
+//                            printf(1, "P-lineno:%d", p->lineno);
                             p->c[col] = c;
-                            p->len++;
+                            p->len = strlen(p->c);
                         }
                     }
                 }

@@ -236,12 +236,13 @@ int getline() {
 
 /*
  * delete one character in screen
+ * @Deprecated
  */
 void
 deletech(int currentline, int linecount) {
     int pos = getcursor();
     int p = pos % 80 + (currentline - 1) * MAX_COL;
-    for (int i = p;i < (MAX_COL - p) + MAX_COL * linecount - 1;i++) {
+    for (int i = p; i < (MAX_COL - p) + MAX_COL * linecount - 1; i++) {
         crt[i] = crt[i + 1];
     }
     setcursor(pos);
@@ -306,8 +307,9 @@ consoleintr(int (*getc)(void)) {
                             setcursor(CMD_LINE);
                         }
                     } else {
-                        curmove(KEY_LF, V_READONLY);
+//                        curmove(KEY_LF, V_READONLY);
 //                        panic("Enter here!!");
+                        ;
                     }
 //                    else {
                     // TODO: BACKSPACE handle
